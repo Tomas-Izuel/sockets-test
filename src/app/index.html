@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Socket.IO Cliente</title>
+    <style>
+      #container {
+        display: flex;
+        gap: 25px;
+      }
+      #chatList {
+        padding: 10px;
+        border-right: 1px solid #ccc;
+      }
+      #messages {
+        width: 70%;
+        padding: 10px;
+      }
+      .chat-item {
+        margin-bottom: 5px;
+        padding: 3px 1px;
+        cursor: pointer;
+        border: 1px solid black;
+        border-radius: 2px;
+      }
+      .message-item {
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Cliente Socket.IO</h1>
+    <div id="status">Conectando...</div>
+
+    <div class="room">
+      <h2>Room Activa:</h2>
+      <h3 id="currentRoom"></h3>
+    </div>
+
+    <div id="container">
+      <div class="chat">
+        <h4 style="text-align: center">Chats</h4>
+        <div id="chatList"></div>
+      </div>
+      <div class="messages">
+        <h4 style="text-align: center">Mensajes</h4>
+        <div id="messagesList"></div>
+      </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+
+
+      const token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbjEyMyIsInR5cGVfdXNlciI6IkFETUlOIiwib3JnYW5pemF0aW9uX2lkIjoxLCJpYXQiOjE3MTk1ODE1ODN9.kz4L4F48dHVv9hl2azgWgUbe7Z2MUwm_Z3jOT5rK2-A";
+      // Conéctate al servidor Socket.IO con el token
+      const socket = io("https://ws.staging.klari.ai", {
+        path: "/socket.io",
+        extraHeaders: {
+          authorization: `bearer ${token}`,
+          bot_id: 1,
+        },
+      });
+
+      // Define el token de autenticación
+      // const token =
+      //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbjEyMyIsInR5cGVfdXNlciI6IkFETUlOIiwib3JnYW5pemF0aW9uX2lkIjoxLCJpYXQiOjE3MTkyMzU0ODl9.7nE2pgthovfTJHl3hFcM0luez9pZSFbhpeK9fS0lhlc";
+      // // Conéctate al servidor Socket.IO con el token
+      // const socket = io("http://localhost:3030", {
+      //   path: "/socket.io",
+      //   extraHeaders: {
+      //     authorization: `bearer ${token}`,
+      //     bot_id: 1,
+      //   },
+      // });
+
+      let chats = [];
+      let messagesDb = {};
+      let currentIdentifier = null;
+
+      const statusDiv = document.getElementById("status");
+      const messagesDiv = document.getElementById("messagesList");
+      const roomListDiv = document.getElementById("chatList");
+      const currentRoom = document.getElementById("currentRoom");
+
+      // Escucha eventos de conexión
+      socket.on("connect", () => {
+        statusDiv.textContent = "Conectado al servidor Socket.IO";
+        loadLocalStorage();
+      });
+
+      // Escucha eventos de desconexión
+      socket.on("disconnect", (reason) => {
+        statusDiv.textContent = "Desconectado del servidor: " + reason;
+      });
+
+      // Maneja errores de conexión
+      socket.on("connect_error", (error) => {
+        statusDiv.textContent = "Error de conexión: " + error.message;
+      });
+
+      // Escucha evento de nueva sala
+      socket.on("new_chat", (room) => {
+        const existingChatIndex = chats.findIndex(
+          (chat) => chat._id === room._id
+        );
+        if (existingChatIndex !== -1) {
+          chats[existingChatIndex] = room;
+        } else {
+          chats.push(room);
+        }
+        saveChatsToLocalStorage();
+        renderChats();
+      });
+
+      // Escucha eventos de nuevos mensajes
+      socket.on("new_message", (message) => {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "message-item";
+        messageDiv.innerHTML = `<span style="font-weight: bold">${message.type_sender}: </span> <br> ${message.message}`;
+        messagesDiv.appendChild(messageDiv);
+        saveMessage(message);
+      });
+
+      function renderChats() {
+        roomListDiv.innerHTML = ""; // Limpia la lista de chats antes de renderizar
+        chats.sort(
+          (a, b) =>
+            new Date(b.last_message.created_at) -
+            new Date(a.last_message.created_at)
+        );
+        chats.forEach((room) => {
+          const roomItem = document.createElement("div");
+          roomItem.className = "chat-item";
+          roomItem.innerHTML = `<h4>${room.identifier}: </h4> <p>${trimString(
+            room.last_message.message
+          )}</p>`;
+          roomItem.addEventListener("click", () => {
+            joinRoom(room.identifier);
+          });
+          roomListDiv.appendChild(roomItem);
+        });
+      }
+
+      function saveMessage(message) {
+        if (!messagesDb[currentIdentifier]) {
+          messagesDb[currentIdentifier] = [];
+        }
+        messagesDb[currentIdentifier].push(message);
+        saveMessagesToLocalStorage();
+      }
+
+      function joinRoom(roomName) {
+        if (currentIdentifier == roomName) {
+          return;
+        }
+        socket.emit("join_chat", roomName);
+        currentIdentifier = roomName;
+        currentRoom.textContent = roomName;
+        renderMessages();
+      }
+
+      function leaveRoom(roomName) {
+        socket.emit("leave_chat", roomName);
+        currentRoom.textContent = "";
+        messagesDiv.innerHTML = "";
+      }
+
+      function renderMessages() {
+        messagesDiv.innerHTML = ""; // Limpia la lista de mensajes antes de renderizar
+        const messages = messagesDb[currentIdentifier] || [];
+        messages.forEach((message) => {
+          const messageDiv = document.createElement("div");
+          messageDiv.className = "message-item";
+          messageDiv.innerHTML = `<span style="font-weight: bold">${message.type_sender}: </span> ${message.message}`;
+          messagesDiv.appendChild(messageDiv);
+        });
+      }
+
+      function saveChatsToLocalStorage() {
+        localStorage.setItem("chats", JSON.stringify(chats));
+      }
+
+      function saveMessagesToLocalStorage() {
+        localStorage.setItem("messagesDb", JSON.stringify(messagesDb));
+      }
+
+      function loadLocalStorage() {
+        const savedChats = JSON.parse(localStorage.getItem("chats"));
+        const savedMessages = JSON.parse(localStorage.getItem("messagesDb"));
+        if (savedChats) {
+          chats = savedChats;
+          renderChats();
+        }
+        if (savedMessages) {
+          messagesDb = savedMessages;
+        }
+      }
+      function trimString(str) {
+        const maxLength = 45;
+        if (str.length <= maxLength) {
+          return str;
+        }
+        return str.substring(0, maxLength) + "...";
+      }
+    </script>
+  </body>
+</html>
