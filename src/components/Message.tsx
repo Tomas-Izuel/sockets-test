@@ -10,7 +10,7 @@ const Message: FC<MessageProps> = ({ message }) => {
   return (
     <div
       className={tw(
-        "p-4 rounded-xl relative w-fit",
+        "transition-message p-4 rounded-xl relative w-fit",
         message.type_sender === "AI"
           ? "bg-blue-100 rounded-ss-sm"
           : "bg-blue-300 rounded-ee-sm self-end"
