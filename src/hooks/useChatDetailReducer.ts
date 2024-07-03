@@ -42,6 +42,11 @@ const useChatDetailReducer = (initialChats: ChatDetailType) => {
     dispatch({ type: "ADD_MORE_MESSAGES", payload: newChats });
   };
 
+  const sendMessage = (message: ChatDetail) => {
+    //fetching the message
+    dispatch({ type: "SEND_MESSAGE", payload: message });
+  };
+
   return { state, addMoreChats };
 };
 
