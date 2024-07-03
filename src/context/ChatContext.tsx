@@ -39,10 +39,15 @@ export const ChatProvider: FC<PropsWithChildren<ChatContextProps>> = ({
     socket.on("connect", () => {
       console.log("Connected to socket");
     });
+
     return () => {
       socket.disconnect();
     };
   }, [bot]);
+
+  socket?.on("new_message", (message) => {
+    console.log("new message", message);
+  });
 
   return (
     <ChatContext.Provider value={{ socket }}>{children}</ChatContext.Provider>

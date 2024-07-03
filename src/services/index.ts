@@ -1,4 +1,11 @@
-import { Bot, Chat, ChatListType, CookieAuthData, ErrorType } from "@/types";
+import {
+  Bot,
+  Chat,
+  ChatDetailType,
+  ChatListType,
+  CookieAuthData,
+  ErrorType,
+} from "@/types";
 
 export const getBots = async (): Promise<Bot[] | ErrorType> => {
   try {
@@ -63,8 +70,8 @@ export const getConversations = async (
 ): Promise<ChatListType | ErrorType> => {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BE_URL}/chats${
-        params ? "?page=" + params.page : ""
+      `${process.env.NEXT_PUBLIC_BE_URL}/chats?page_size=10${
+        params ? "&page=" + params.page : ""
       }`,
       {
         headers: {
@@ -91,6 +98,47 @@ export const getConversations = async (
     return {
       code: 1,
       message: "conversation-fetch",
+      detailedCause: JSON.stringify(e),
+    };
+  }
+};
+
+export const getChatByIdentifier = async (
+  bot: Bot,
+  identifier: string,
+  params?: { page: number }
+): Promise<ChatDetailType | ErrorType> => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BE_URL}/chats/${identifier}?${
+        params ? "page=" + params.page + "&" : ""
+      }page_size=50`,
+      {
+        headers: {
+          Authorization: process.env.NEXT_PUBLIC_BEARER_TOKEN || "",
+          bot_info: JSON.stringify({
+            bot_uuid: bot.uuid,
+            bot_id: bot.id,
+          }),
+        },
+        cache: "no-cache",
+      }
+    );
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    } else {
+      return {
+        code: response.status,
+        message: "chat-fetch",
+        detailedCause: await response.json(),
+      };
+    }
+  } catch (e) {
+    console.log(e);
+    return {
+      code: 1,
+      message: "chat-fetch",
       detailedCause: JSON.stringify(e),
     };
   }

@@ -55,3 +55,26 @@ export interface Chat {
   status: "CLOSE" | "OPEN"; // Asumiendo que el estado puede ser 'CLOSE' o 'OPEN'
   last_message: Message;
 }
+
+export interface ChatDetailType {
+  total: number;
+  page: number;
+  page_size: number;
+  identifier: string;
+  user: string;
+  status: "CLOSE" | "OPEN";
+  intercepted_chat: boolean;
+  rows: ChatDetail[];
+}
+
+export interface ChatDetail {
+  updatedAt: string;
+  createdAt: string;
+  message: string;
+  type_sender: "AI" | "USER";
+  type_message: "text";
+  _id: string;
+  chat_id: string;
+  conversation_id: string;
+  identifier: string;
+}
