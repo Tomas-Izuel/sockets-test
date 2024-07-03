@@ -40,6 +40,10 @@ export const ChatProvider: FC<PropsWithChildren<ChatContextProps>> = ({
       console.log("Connected to socket");
     });
 
+    socket.on("connect_error", (error) => {
+      alert("Error connecting to socket");
+    });
+
     return () => {
       socket.disconnect();
     };

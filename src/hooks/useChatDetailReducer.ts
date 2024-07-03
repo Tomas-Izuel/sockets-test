@@ -18,18 +18,13 @@ const useChatDetailReducer = (initialChats: ChatDetailType) => {
 
   useEffect(() => {
     dispatch({ type: "INITIALIZE", payload: initialChats });
-    const response = socket?.emit(
-      "join_room",
-      initialChats.identifier,
-      (response: any) => {
-        console.log("joined room", response);
-      }
-    );
+    socket?.emit("join_chat", initialChats.identifier, (response: any) => {
+      console.log("joined room", response);
+    });
   }, [initialChats, socket]);
 
   useEffect(() => {
     socket?.on("new_message", (message: ChatDetail) => {
-      console.log("new message", message);
       dispatch({ type: "ADD_MESSAGE", payload: message });
     });
 

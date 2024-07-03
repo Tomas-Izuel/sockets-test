@@ -13,7 +13,7 @@ export const singleChatReducer = (state: State, action: Action): State => {
     case "ADD_MESSAGE":
       return {
         ...state,
-        rows: [...state.rows, action.payload],
+        rows: [action.payload, ...state.rows],
       };
 
     case "INITIALIZE":
