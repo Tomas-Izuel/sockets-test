@@ -54,6 +54,7 @@ export interface Chat {
   __v: number;
   status: "CLOSE" | "OPEN"; // Asumiendo que el estado puede ser 'CLOSE' o 'OPEN'
   last_message: Message;
+  show_transition?: boolean;
 }
 
 export interface ChatDetailType {
@@ -77,4 +78,5 @@ export interface ChatDetail {
   chat_id: string;
   conversation_id: string;
   identifier: string;
+  show_transition?: boolean;
 }

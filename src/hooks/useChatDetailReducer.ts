@@ -18,14 +18,16 @@ const useChatDetailReducer = (initialChats: ChatDetailType) => {
 
   useEffect(() => {
     dispatch({ type: "INITIALIZE", payload: initialChats });
-    socket?.emit("join_chat", initialChats.identifier, (response: any) => {
-      console.log("joined room", response);
-    });
+    socket?.emit("join_chat", initialChats.identifier);
   }, [initialChats, socket]);
 
   useEffect(() => {
     socket?.on("new_message", (message: ChatDetail) => {
-      dispatch({ type: "ADD_MESSAGE", payload: message });
+      const transitionedMessage = {
+        ...message,
+        show_transition: true,
+      };
+      dispatch({ type: "ADD_MESSAGE", payload: transitionedMessage });
     });
 
     return () => {

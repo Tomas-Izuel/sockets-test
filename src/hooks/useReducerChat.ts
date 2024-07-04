@@ -14,7 +14,11 @@ const useChatReducer = (initialChats: ChatListType) => {
 
   useEffect(() => {
     socket?.on("new_chat", (message: Chat) => {
-      dispatch({ type: "ADD_OR_UPDATE_CHAT", payload: message });
+      const transitionedMessage = {
+        ...message,
+        show_transition: true,
+      };
+      dispatch({ type: "ADD_OR_UPDATE_CHAT", payload: transitionedMessage });
     });
 
     return () => {

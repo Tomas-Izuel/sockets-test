@@ -3,7 +3,7 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import { Bot, ChatListType } from "@/types";
 import useChatReducer from "@/hooks/useReducerChat";
-import { isErrorType } from "@/utils";
+import { isErrorType, tw } from "@/utils";
 import { Spinner } from "@chakra-ui/react";
 import { getConversations } from "@/services";
 import {
@@ -72,7 +72,10 @@ const ChatList: FC<ChatListProps> = ({ chats, bot }) => {
           <Link
             href={"/1/chat/" + chat.identifier}
             key={chat._id}
-            className="px-4 pt-2 w-full transition-chats flex flex-col gap-2 border-b-[1px] border-gray-400 h-20 bg-gray-50"
+            className={tw(
+              "px-4 pt-2 w-full flex flex-col gap-2 border-b-[1px] border-gray-400 h-20 bg-gray-50",
+              chat.show_transition ? "transition-chats" : ""
+            )}
           >
             <h3 className="font-semibold flex justify-between">
               {chat.user}
